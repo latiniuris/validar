@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>Validación de retiro · Latin Iuris</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <style>
+    :root {
+      --verde: #0b8a3e;
+      --verde-osc: #066b2f;
+      --rojo: #c62828;
+      --rojo-osc: #8e1b1b;
+      --gris: #f3f4f6;
+      --texto: #1b1b1b;
+      --radio: 14px;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; padding: 0; min-height: 100%; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      background: #444; color: #fff; min-height: 100vh;
+      transition: background .25s ease;
+    }
+    body.verde { background: var(--verde); }
+    body.exito { background: var(--verde-osc); }
+    body.rojo  { background: var(--rojo); }
+
+    .contenedor { max-width: 520px; margin: 0 auto; padding: 22px 16px 40px; }
+
+    .estado { text-align: center; padding: 10px 0 18px; }
+    .icono {
+      width: 84px; height: 84px; margin: 0 auto 10px; border-radius: 50%;
+      background: rgba(255,255,255,.18); display: flex; align-items: center; justify-content: center;
+      font-size: 50px; line-height: 1; font-weight: 700;
+    }
+    .titulo { font-size: 30px; font-weight: 800; letter-spacing: .5px; margin: 0; line-height: 1.15; }
+    .subtitulo { font-size: 16px; margin: 8px 0 0; opacity: .95; }
+
+    .tarjeta {
+      background: #fff; color: var(--texto); border-radius: var(--radio);
+      padding: 16px 18px; margin-top: 14px; box-shadow: 0 6px 18px rgba(0,0,0,.18);
+    }
+    .dato { padding: 9px 0; border-bottom: 1px solid #eee; }
+    .dato:last-child { border-bottom: none; }
+    .etiqueta { font-size: 12px; text-transform: uppercase; letter-spacing: .6px; color: #6b7280; }
+    .valor { font-size: 19px; font-weight: 700; margin-top: 2px; word-break: break-word; }
+    .valor.cedula { font-size: 26px; letter-spacing: 1.5px; font-variant-numeric: tabular-nums; }
+
+    .aviso {
+      background: #fff8e1; color: #6b4d00; border-left: 5px solid #f5a623;
+      border-radius: 10px; padding: 12px 14px; font-size: 15px; margin-top: 14px; font-weight: 600;
+    }
+
+    .seccion { font-size: 15px; font-weight: 700; margin: 22px 0 10px; text-transform: uppercase; letter-spacing: .6px; }
+
+    .libreria {
+      display: block; width: 100%; min-height: 64px; margin-bottom: 10px;
+      border: 3px solid rgba(255,255,255,.85); border-radius: var(--radio);
+      background: rgba(255,255,255,.12); color: #fff;
+      font-size: 20px; font-weight: 700; cursor: pointer; text-align: left; padding: 0 18px;
+    }
+    .libreria .check { float: right; opacity: 0; }
+    .libreria.activa { background: #fff; color: var(--verde-osc); border-color: #fff; }
+    .libreria.activa .check { opacity: 1; }
+
+    .btn {
+      display: block; width: 100%; min-height: 70px; border: none; border-radius: var(--radio);
+      font-size: 21px; font-weight: 800; letter-spacing: .5px; cursor: pointer; margin-top: 18px;
+    }
+    .btn-confirmar { background: #ffeb3b; color: #1b1b1b; box-shadow: 0 6px 0 #c7b400; }
+    .btn-confirmar:active { transform: translateY(3px); box-shadow: 0 3px 0 #c7b400; }
+    .btn:disabled { background: rgba(255,255,255,.35); color: rgba(0,0,0,.45); box-shadow: none; cursor: not-allowed; }
+
+    .bloqueo {
+      background: rgba(0,0,0,.22); border-radius: var(--radio); padding: 14px 16px;
+      margin-top: 16px; font-size: 16px; font-weight: 700; text-align: center;
+    }
+
+    .error-red { background: #fff; color: var(--rojo-osc); border-radius: 10px; padding: 12px 14px; margin-top: 12px; font-weight: 600; display: none; }
+
+    /* ---------- Modal de confirmación ---------- */
+    .modal {
+      position: fixed; inset: 0; background: rgba(0,0,0,.62); display: none;
+      align-items: flex-end; justify-content: center; z-index: 10; padding: 12px;
+    }
+    .modal.visible { display: flex; }
+    .modal-caja {
+      background: #fff; color: var(--texto); width: 100%; max-width: 520px;
+      border-radius: 18px; padding: 22px 18px 18px; animation: subir .18s ease-out;
+    }
+    @keyframes subir { from { transform: translateY(30px); opacity: 0; } to { transform: none; opacity: 1; } }
+    .modal-titulo { font-size: 22px; font-weight: 800; margin: 0 0 10px; }
+    .modal-texto { font-size: 17px; line-height: 1.45; margin: 0 0 6px; }
+    .modal-nota { font-size: 14px; color: #b00020; font-weight: 700; margin: 10px 0 0; }
+    .modal-botones { display: flex; gap: 10px; margin-top: 18px; }
+    .modal-botones .btn { margin-top: 0; min-height: 62px; font-size: 18px; }
+    .btn-cancelar { background: #e5e7eb; color: #111; }
+    .btn-si { background: var(--verde); color: #fff; }
+
+    .cargando { display: inline-block; width: 22px; height: 22px; border: 3px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: girar .8s linear infinite; vertical-align: middle; margin-right: 8px; }
+    @keyframes girar { to { transform: rotate(360deg); } }
+
+    .pie { text-align: center; font-size: 12px; opacity: .75; margin-top: 28px; }
+    .pie a { color: #fff; }
+    .inicio-texto { font-size: 16px; line-height: 1.5; }
+
+    .aviso-titular {
+      background: #fff; color: #7a1010; border: 3px solid #ffcc00; border-radius: var(--radio);
+      padding: 14px 16px; margin-top: 4px; font-size: 15px; line-height: 1.45;
+    }
+    .aviso-titular b { color: #b00020; }
+    .zona-personal {
+      margin-top: 22px; padding: 14px 14px 4px; border: 2px dashed rgba(255,255,255,.75);
+      border-radius: var(--radio); background: rgba(0,0,0,.10);
+    }
+    .zona-personal .seccion { margin-top: 0; }
+    .zona-personal .nota { font-size: 13px; opacity: .95; margin: -4px 0 12px; }
+    .codigo { text-align: center; font-size: 14px; margin-top: 10px; opacity: .95; letter-spacing: 1px; }
+    .pin-input {
+      width: 100%; font-size: 28px; letter-spacing: 8px; text-align: center; padding: 12px;
+      border: 2px solid #c7c7c7; border-radius: 12px; margin-top: 12px;
+    }
+    .pin-input::placeholder { letter-spacing: 0; font-size: 17px; }
+    .pin-error { color: #b00020; font-weight: 700; font-size: 14px; margin-top: 8px; min-height: 18px; }
+  </style>
+</head>
+<body>
+  <div class="contenedor" id="app"></div>
+
+  <div class="modal" id="modal" role="dialog" aria-modal="true">
+    <div class="modal-caja">
+      <p class="modal-titulo">Registrar entrega (solo personal de librería)</p>
+      <p class="modal-texto" id="modalTexto"></p>
+      <div id="bloquePin">
+        <input id="pin" class="pin-input" type="password" inputmode="numeric" autocomplete="off"
+               maxlength="6" placeholder="PIN de la librería">
+        <div class="pin-error" id="pinError"></div>
+      </div>
+      <p class="modal-nota">Esta acción es definitiva: el código QR quedará anulado.</p>
+      <div class="modal-botones">
+        <button class="btn btn-cancelar" id="btnCancelar" type="button">Cancelar</button>
+        <button class="btn btn-si" id="btnSi" type="button">Registrar entrega</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // Página pública de validación: consulta la Web App de Apps Script como API, sin
+  // cookies ni cuentas de Google, por lo que funciona en cualquier celular.
+  var API = 'https://script.google.com/macros/s/AKfycbyUaXb_JoRArz_QRlr_eHm4Ko7DMzWb3ijd_sgKMdTsJ9WnJzrwKB8wIDOn8cbsZVDiQA/exec';
+  var params = new URLSearchParams(location.search);
+  var TOKEN = String(params.get('t') || params.get('token') || '').trim().toLowerCase();
+  var LIBRERIAS = [];
+  var EXIGIR_PIN = true;
+
+  function llamarApi(opciones) {
+    return fetch(opciones.url, {
+      method: opciones.metodo || 'GET',
+      body: opciones.cuerpo,
+      credentials: 'omit',        // sin cookies: evita el error de varias cuentas de Google
+      redirect: 'follow',
+      cache: 'no-store'
+    }).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
+  }
+
+  var app = document.getElementById('app');
+  var modal = document.getElementById('modal');
+  var libreriaSeleccionada = null;
+  var CLAVE_LIBRERIA = 'qr_libreria_preferida';
+
+  /* ---------- utilidades DOM (textContent → sin riesgo de inyección) ---------- */
+  function el(tag, clase, texto) {
+    var n = document.createElement(tag);
+    if (clase) n.className = clase;
+    if (texto != null) n.textContent = texto;
+    return n;
+  }
+  function limpiar() { while (app.firstChild) app.removeChild(app.firstChild); window.scrollTo(0, 0); }
+  function fondo(clase) { document.body.className = clase; }
+  function vibrar(patron) { try { if (navigator.vibrate) navigator.vibrate(patron); } catch (e) {} }
+
+  function cabecera(icono, titulo, subtitulo) {
+    var c = el('div', 'estado');
+    c.appendChild(el('div', 'icono', icono));
+    c.appendChild(el('h1', 'titulo', titulo));
+    if (subtitulo) c.appendChild(el('p', 'subtitulo', subtitulo));
+    return c;
+  }
+  function tarjetaDatos(filas) {
+    var t = el('div', 'tarjeta');
+    filas.forEach(function (f) {
+      if (!f[1]) return;
+      var d = el('div', 'dato');
+      d.appendChild(el('div', 'etiqueta', f[0]));
+      d.appendChild(el('div', 'valor' + (f[2] ? ' ' + f[2] : ''), f[1]));
+      t.appendChild(d);
+    });
+    return t;
+  }
+  function pie() {
+    var p = el('div', 'pie', 'Sistema de validación de retiro · Código de un solo uso · ');
+    var a = el('a', null, 'Política de privacidad'); a.href = 'privacidad.html';
+    p.appendChild(a); return p;
+  }
+  function pantallaInicio() {
+    limpiar(); fondo('');
+    app.appendChild(cabecera('LI', 'Latin Iuris', 'Sistema de validación de retiro de libros'));
+    var t = el('div', 'tarjeta inicio-texto');
+    t.appendChild(el('p', null, 'Esta página valida los códigos QR de un solo uso que Latin Iuris envía a sus clientes para retirar en librerías autorizadas de Quito los libros adquiridos.'));
+    t.appendChild(el('p', null, 'Para usarla, escanee el código QR recibido por correo electrónico. El registro de la entrega lo realiza únicamente el personal de la librería.'));
+    t.appendChild(el('p', null, 'Contacto: latiniuriscontacto@gmail.com'));
+    app.appendChild(t);
+    app.appendChild(pie());
+  }
+
+  function leerPreferida() { try { return localStorage.getItem(CLAVE_LIBRERIA); } catch (e) { return null; } }
+  function guardarPreferida(v) { try { localStorage.setItem(CLAVE_LIBRERIA, v); } catch (e) {} }
+
+  /* ------------------------------ PANTALLAS ------------------------------ */
+
+  function pantallaValida(d) {
+    limpiar(); fondo('verde'); vibrar(120);
+    app.appendChild(cabecera('✓', 'PASE VÁLIDO', 'Código vigente · aún no ha sido canjeado'));
+
+    // Aviso para el titular: escanear es libre; registrar la entrega NO le corresponde.
+    var aviso = el('div', 'aviso-titular');
+    aviso.appendChild(el('b', null, 'Titular: '));
+    aviso.appendChild(document.createTextNode('no registre la entrega; lo hace el personal de la librería. '));
+    aviso.appendChild(el('b', null, 'Si lo hace usted, su QR quedará invalidado.'));
+    app.appendChild(aviso);
+
+    app.appendChild(tarjetaDatos([
+      ['Nombre', d.nombre],
+      ['Cédula', d.cedula, 'cedula'],
+      ['Libro(s)', d.libros]
+    ]));
+    if (d.codigo) app.appendChild(el('div', 'codigo', 'Código de pedido: ' + d.codigo));
+
+    var zona = el('div', 'zona-personal');
+    app.appendChild(zona);
+    zona.appendChild(el('div', 'seccion', 'Exclusivo personal de librería'));
+    zona.appendChild(el('div', 'nota', 'Verifique la cédula física del cliente, seleccione su librería y registre la entrega.'));
+    var preferida = leerPreferida();
+    var botones = [];
+    LIBRERIAS.forEach(function (nombre) {
+      var b = el('button', 'libreria');
+      b.type = 'button';
+      b.appendChild(document.createTextNode(nombre));
+      b.appendChild(el('span', 'check', '✔'));
+      b.addEventListener('click', function () { seleccionar(nombre); });
+      b.dataset.nombre = nombre;
+      botones.push(b);
+      zona.appendChild(b);
+    });
+
+    var btn = el('button', 'btn btn-confirmar', 'CONFIRMAR ENTREGA');
+    btn.type = 'button'; btn.id = 'btnConfirmar'; btn.disabled = true;
+    btn.addEventListener('click', function () { abrirModal(d); });
+    zona.appendChild(btn);
+
+    var err = el('div', 'error-red'); err.id = 'errorRed';
+    zona.appendChild(err);
+    zona.appendChild(el('div', null, ' '));
+    app.appendChild(pie());
+
+    function seleccionar(nombre) {
+      libreriaSeleccionada = nombre;
+      botones.forEach(function (b) { b.classList.toggle('activa', b.dataset.nombre === nombre); });
+      btn.disabled = false;
+    }
+    if (preferida && LIBRERIAS.indexOf(preferida) !== -1) seleccionar(preferida);
+  }
+
+  function pantallaExito(r) {
+    limpiar(); fondo('exito'); vibrar([80, 60, 80]);
+    app.appendChild(cabecera('✓', 'ENTREGA REGISTRADA', 'Puede entregar el libro al cliente'));
+    app.appendChild(tarjetaDatos([
+      ['Nombre', r.nombre],
+      ['Cédula', r.cedula, 'cedula'],
+      ['Libro(s)', r.libros],
+      ['Entregado en', r.libreria],
+      ['Fecha y hora', r.fecha]
+    ]));
+    app.appendChild(el('div', 'bloqueo', 'Este código QR ya quedó anulado. Puede cerrar esta página.'));
+    app.appendChild(pie());
+  }
+
+  function pantallaRoja(titulo, subtitulo, filas, mensajeBloqueo) {
+    limpiar(); fondo('rojo'); vibrar([300, 100, 300]);
+    app.appendChild(cabecera('✕', titulo, subtitulo));
+    if (filas && filas.length) app.appendChild(tarjetaDatos(filas));
+    app.appendChild(el('div', 'bloqueo', mensajeBloqueo || 'NO ENTREGUE EL LIBRO.'));
+    app.appendChild(pie());
+  }
+
+  function renderizar(d) {
+    switch (d.estado) {
+      case 'VALIDO':
+        pantallaValida(d); break;
+      case 'ENTREGADO':
+        pantallaRoja('ALERTA: CUPÓN YA CANJEADO',
+          'Este código ya fue utilizado',
+          [['Retirado en', d.libreria || '—'], ['Fecha y hora', d.fecha || '—'],
+           ['Titular', d.nombre], ['Cédula', d.cedula, 'cedula'], ['Libro(s)', d.libros]],
+          'NO ENTREGUE EL LIBRO. Este pedido ya fue retirado.');
+        break;
+      case 'NO_PAGADO':
+        pantallaRoja('ALERTA: PAGO NO CONFIRMADO', 'El pago de este pedido no está verificado',
+          [['Titular', d.nombre], ['Cédula', d.cedula, 'cedula']],
+          'NO ENTREGUE EL LIBRO. El cliente debe comunicarse con el vendedor.');
+        break;
+      case 'ERROR':
+        pantallaRoja('ERROR DE CONEXIÓN', d.mensaje || 'No se pudo consultar el pedido',
+          null, 'Vuelva a escanear el código en unos segundos.');
+        break;
+      default: // INVALIDO
+        pantallaRoja('ALERTA: CÓDIGO NO VÁLIDO', 'Este QR no corresponde a ningún pedido registrado',
+          null, 'NO ENTREGUE EL LIBRO.');
+    }
+  }
+
+  /* ------------------------------ CONFIRMACIÓN ------------------------------ */
+
+  function abrirModal(d) {
+    if (!libreriaSeleccionada) return;
+    document.getElementById('modalTexto').textContent =
+      'Entregar "' + d.libros + '" a ' + d.nombre + ' (C.I. ' + d.cedula + ') en la librería ' + libreriaSeleccionada + '.' +
+      (EXIGIR_PIN ? ' Ingrese el PIN de su librería para confirmar.' : '');
+    document.getElementById('bloquePin').style.display = EXIGIR_PIN ? 'block' : 'none';
+    document.getElementById('pin').value = '';
+    document.getElementById('pinError').textContent = '';
+    modal.classList.add('visible');
+    if (EXIGIR_PIN) setTimeout(function () { document.getElementById('pin').focus(); }, 150);
+  }
+  function cerrarModal() { modal.classList.remove('visible'); }
+
+  document.getElementById('btnCancelar').addEventListener('click', cerrarModal);
+  modal.addEventListener('click', function (ev) { if (ev.target === modal) cerrarModal(); });
+
+  document.getElementById('btnSi').addEventListener('click', function () {
+    var pin = document.getElementById('pin').value.trim();
+    if (EXIGIR_PIN && !/^[0-9]{4,6}$/.test(pin)) {
+      document.getElementById('pinError').textContent = 'Ingrese el PIN numérico de la librería (4 a 6 dígitos).';
+      return;
+    }
+    cerrarModal();
+    var btn = document.getElementById('btnConfirmar');
+    var errorRed = document.getElementById('errorRed');
+    var todos = document.querySelectorAll('.libreria');
+    btn.disabled = true;
+    for (var i = 0; i < todos.length; i++) todos[i].disabled = true;
+    btn.innerHTML = '<span class="cargando"></span>REGISTRANDO…';
+    errorRed.style.display = 'none';
+
+    guardarPreferida(libreriaSeleccionada);
+
+    // Cuerpo como texto (sin cabeceras extra) para que el navegador no haga una consulta previa CORS.
+    llamarApi({ url: API, metodo: 'POST',
+                cuerpo: JSON.stringify({ accion: 'confirmar', t: TOKEN, libreria: libreriaSeleccionada, pin: pin }) })
+      .then(function (r) {
+        if (r && r.ok) { pantallaExito(r); return; }
+        if (r && r.estado && r.estado !== 'ERROR') { renderizar(r); return; } // p. ej. otra librería lo canjeó segundos antes
+        reactivar((r && r.mensaje) || 'No se pudo registrar la entrega.');
+      })
+      .catch(function () {
+        reactivar('Sin conexión con el servidor. Verifique internet y pulse de nuevo "Confirmar entrega".');
+      });
+
+    function reactivar(msg) {
+      btn.textContent = 'CONFIRMAR ENTREGA';
+      btn.disabled = false;
+      for (var i = 0; i < todos.length; i++) todos[i].disabled = false;
+      errorRed.textContent = msg;
+      errorRed.style.display = 'block';
+    }
+  });
+
+  /* ------------------------------ CARGA INICIAL ------------------------------ */
+  function cargar() {
+    limpiar(); fondo('');
+    app.appendChild(cabecera('…', 'Verificando código', 'Un momento, por favor'));
+    if (!TOKEN) { pantallaInicio(); return; }
+    if (!/^[a-f0-9]{64}$/.test(TOKEN)) { renderizar({ estado: 'INVALIDO' }); return; }
+    llamarApi({ url: API + '?api=consulta&t=' + encodeURIComponent(TOKEN) })
+      .then(function (d) {
+        LIBRERIAS = d.librerias || [];
+        EXIGIR_PIN = d.exigirPin !== false;
+        renderizar(d);
+      })
+      .catch(function () {
+        renderizar({ estado: 'ERROR', mensaje: 'No se pudo conectar. Revise su conexión a internet.' });
+        var reintentar = el('button', 'btn btn-confirmar', 'VOLVER A INTENTAR');
+        reintentar.type = 'button';
+        reintentar.addEventListener('click', cargar);
+        app.insertBefore(reintentar, app.lastChild);
+      });
+  }
+  cargar();
+</script>
+</body>
+</html>
